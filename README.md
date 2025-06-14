@@ -3,7 +3,6 @@
 # 🚀 ProjectFlow 📋✨  
 _A Modern, Intuitive Kanban-style Project Management App_
 
-![ProjectFlow Banner](https://github.com/mani9441/ProjectFlow/assets/banner-placeholder.png) <!-- Optional: Replace with actual banner -->
 
 ---
 
