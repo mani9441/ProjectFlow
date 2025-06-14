@@ -1,8 +1,7 @@
-
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, FileText, Type, Hash } from "lucide-react";
-import { CustomSection } from "@/pages/Index";
+import type { CustomSection } from "@/types";
 
 interface CustomSectionDisplayProps {
   section: CustomSection;

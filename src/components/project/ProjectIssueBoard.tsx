@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Plus, Bug, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
-import { Project, Issue } from "@/pages/Index";
+import type { Project, Issue } from "@/types";
 import { NewIssueDialog } from "@/components/issues/NewIssueDialog";
 
 interface ProjectIssueBoardProps {

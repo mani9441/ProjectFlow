@@ -1,21 +1,34 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Clock, Play, CheckCircle2, Calendar } from "lucide-react";
-import { Project, Task } from "@/pages/Index";
+import { Plus, Clock, Play, CheckCircle2, Calendar, Trash2 } from "lucide-react";
+import type { Project, Task } from "@/types";
 import { NewTaskDialog } from "./NewTaskDialog";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 
 interface TaskBoardProps {
   projects: Project[];
   tasks: Task[];
   onCreateTask: (task: Omit<Task, "id" | "createdAt" | "updatedAt">) => void;
   onUpdateTask: (task: Task) => void;
+  onDeleteTask?: (taskId: string) => void;
 }
 
-export const TaskBoard = ({ projects, tasks, onCreateTask, onUpdateTask }: TaskBoardProps) => {
+export const TaskBoard = ({ projects, tasks, onCreateTask, onUpdateTask, onDeleteTask }: TaskBoardProps) => {
   const [showNewTaskDialog, setShowNewTaskDialog] = useState(false);
+  const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<string | null>(null);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -61,6 +74,42 @@ export const TaskBoard = ({ projects, tasks, onCreateTask, onUpdateTask }: TaskB
                 <option value="in-progress">In Progress</option>
                 <option value="done">Done</option>
               </select>
+              <AlertDialog open={deleteDialogOpenId === task.id} onOpenChange={open => setDeleteDialogOpenId(open ? task.id : null)}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 ml-2" onClick={e => { e.stopPropagation(); setDeleteDialogOpenId(task.id); }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Task</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this task? This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel asChild>
+                      <Button variant="outline" onClick={() => setDeleteDialogOpenId(null)}>
+                        Cancel
+                      </Button>
+                    </AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          if (onDeleteTask) {
+                            onDeleteTask(task.id); // Connect to actual delete
+                            toast({ title: "Task deleted" });
+                          }
+                          setDeleteDialogOpenId(null);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
           <p className="text-xs text-slate-600 line-clamp-2">

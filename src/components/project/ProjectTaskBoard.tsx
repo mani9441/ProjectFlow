@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Plus, Clock, Play, CheckCircle2, Calendar } from "lucide-react";
-import { Project, Task } from "@/pages/Index";
+import type { Project, Task } from "@/types";
 import { NewTaskDialog } from "@/components/tasks/NewTaskDialog";
 
 interface ProjectTaskBoardProps {

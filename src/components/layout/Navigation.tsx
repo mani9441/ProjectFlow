@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -9,7 +8,7 @@ import {
   CheckSquare,
   BarChart3
 } from "lucide-react";
-import { CurrentView } from "@/pages/Index";
+import type { CurrentView } from "@/types";
 
 interface NavigationProps {
   currentView: CurrentView;

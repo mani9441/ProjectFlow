@@ -1,21 +1,40 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Bug, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
-import { Project, Issue } from "@/pages/Index";
+import { Plus, Bug, AlertCircle, CheckCircle2, XCircle, Trash2 } from "lucide-react";
+import type { Project, Issue } from "@/types";
 import { NewIssueDialog } from "./NewIssueDialog";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 
 interface IssueBoardProps {
   projects: Project[];
   issues: Issue[];
   onCreateIssue: (issue: Omit<Issue, "id" | "createdAt" | "updatedAt">) => void;
   onUpdateIssue: (issue: Issue) => void;
+  onDeleteIssue?: (issueId: string) => void;
 }
 
-export const IssueBoard = ({ projects, issues, onCreateIssue, onUpdateIssue }: IssueBoardProps) => {
+export const IssueBoard = ({
+  projects,
+  issues,
+  onCreateIssue,
+  onUpdateIssue,
+  onDeleteIssue,
+}: IssueBoardProps) => {
   const [showNewIssueDialog, setShowNewIssueDialog] = useState(false);
+  const [deleteDialogOpenId, setDeleteDialogOpenId] = useState<string | null>(null);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -66,6 +85,40 @@ export const IssueBoard = ({ projects, issues, onCreateIssue, onUpdateIssue }: I
                 <option value="resolved">Resolved</option>
                 <option value="closed">Closed</option>
               </select>
+              <AlertDialog open={deleteDialogOpenId === issue.id} onOpenChange={open => setDeleteDialogOpenId(open ? issue.id : null)}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 ml-2" onClick={e => { e.stopPropagation(); setDeleteDialogOpenId(issue.id); }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Issue</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this issue? This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel asChild>
+                      <Button variant="outline" onClick={() => setDeleteDialogOpenId(null)}>Cancel</Button>
+                    </AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          if (onDeleteIssue) {
+                            onDeleteIssue(issue.id);
+                            toast({ title: "Issue deleted" });
+                          }
+                          setDeleteDialogOpenId(null);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
           <p className="text-xs text-slate-600 line-clamp-2">

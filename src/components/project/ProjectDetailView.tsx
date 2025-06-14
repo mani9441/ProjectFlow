@@ -5,11 +5,33 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Calendar, Code, Tag, Plus, Edit2, Trash2 } from "lucide-react";
-import { Project, Issue, Task } from "@/pages/Index";
+import type { Project, Issue, Task } from "@/types";
 import { CustomSectionEditor } from "@/components/common/CustomSectionEditor";
 import { CustomSectionDisplay } from "@/components/common/CustomSectionDisplay";
 import { ProjectIssueBoard } from "@/components/project/ProjectIssueBoard";
 import { ProjectTaskBoard } from "@/components/project/ProjectTaskBoard";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/components/ui/use-toast";
 
 interface ProjectDetailViewProps {
   project: Project;
@@ -21,21 +43,33 @@ interface ProjectDetailViewProps {
   onCreateTask: (task: Omit<Task, "id" | "createdAt" | "updatedAt">) => void;
   onUpdateTask: (task: Task) => void;
   onBack: () => void;
+  onDeleteProject?: (projectId: string) => void;
 }
 
-export const ProjectDetailView = ({ 
-  project, 
-  issues, 
-  tasks, 
-  onUpdateProject, 
+export const ProjectDetailView = ({
+  project,
+  issues,
+  tasks,
+  onUpdateProject,
   onCreateIssue,
   onUpdateIssue,
   onCreateTask,
   onUpdateTask,
-  onBack 
+  onBack,
+  onDeleteProject,
 }: ProjectDetailViewProps) => {
   const [showAddSection, setShowAddSection] = useState(false);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // Form state for editing
+  const [editName, setEditName] = useState(project.name);
+  const [editDescription, setEditDescription] = useState(project.description);
+  const [editStatus, setEditStatus] = useState<Project["status"]>(project.status);
+  const [editDueDate, setEditDueDate] = useState(project.dueDate || "");
+  const [editTags, setEditTags] = useState(project.tags.join(", "));
+  const [editTechStack, setEditTechStack] = useState(project.techStack.join(", "));
 
   const handleAddCustomSection = (title: string, content: string, type?: string) => {
     const newSection = {
@@ -57,10 +91,15 @@ export const ProjectDetailView = ({
     setShowAddSection(false);
   };
 
-  const handleEditCustomSection = (sectionId: string, title: string, content: string, type?: string) => {
+  const handleEditCustomSection = (
+    sectionId: string,
+    title: string,
+    content: string,
+    type?: string
+  ) => {
     const updatedProject = {
       ...project,
-      customSections: project.customSections.map(section =>
+      customSections: project.customSections.map((section) =>
         section.id === sectionId
           ? { ...section, title, content, type: type as any, updatedAt: new Date().toISOString() }
           : section
@@ -75,11 +114,43 @@ export const ProjectDetailView = ({
   const handleDeleteCustomSection = (sectionId: string) => {
     const updatedProject = {
       ...project,
-      customSections: project.customSections.filter(section => section.id !== sectionId),
+      customSections: project.customSections.filter((section) => section.id !== sectionId),
       updatedAt: new Date().toISOString(),
     };
 
     onUpdateProject(updatedProject);
+  };
+
+  const handleEditSave = () => {
+    const updatedProject: Project = {
+      ...project,
+      name: editName,
+      description: editDescription,
+      status: editStatus,
+      dueDate: editDueDate ? editDueDate : undefined,
+      techStack: editTechStack.split(",").map((s) => s.trim()).filter(Boolean),
+      tags: editTags.split(",").map((s) => s.trim()).filter(Boolean),
+      updatedAt: new Date().toISOString(),
+    };
+    onUpdateProject(updatedProject);
+    setEditDialogOpen(false);
+    toast({
+      title: "Project updated",
+      description: "Project details have been updated.",
+    });
+  };
+
+  const handleDelete = () => {
+    if (onDeleteProject) {
+      onDeleteProject(project.id); // ensure this is called!
+    } else {
+      onBack();
+    }
+    setDeleteDialogOpen(false);
+    toast({
+      title: "Project deleted",
+      description: "Project has been deleted and you have been returned to the dashboard.",
+    });
   };
 
   return (
@@ -103,16 +174,148 @@ export const ProjectDetailView = ({
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <Card className="bg-white/80 backdrop-blur-sm">
+          <Card className="bg-white/800 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <CardTitle className="text-xl">Project Overview</CardTitle>
-                <Badge 
-                  variant={project.status === "active" ? "default" : 
-                          project.status === "completed" ? "secondary" : "outline"}
-                >
-                  {project.status}
-                </Badge>
+                <div className="flex gap-2">
+                  <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditDialogOpen(true);
+                          setEditName(project.name);
+                          setEditDescription(project.description);
+                          setEditStatus(project.status);
+                          setEditDueDate(project.dueDate || "");
+                          setEditTags(project.tags.join(", "));
+                          setEditTechStack(project.techStack.join(", "));
+                        }}
+                      >
+                        <Edit2 className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Edit Project</DialogTitle>
+                      </DialogHeader>
+                      <form
+                        className="space-y-4"
+                        onSubmit={e => {
+                          e.preventDefault();
+                          handleEditSave();
+                        }}
+                      >
+                        <div>
+                          <label className="block text-sm mb-1 font-medium text-gray-700">Name</label>
+                          <input
+                            type="text"
+                            className="w-full border px-2 py-1 rounded"
+                            value={editName}
+                            onChange={e => setEditName(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm mb-1 font-medium text-gray-700">Description</label>
+                          <textarea
+                            className="w-full border px-2 py-1 rounded"
+                            value={editDescription}
+                            onChange={e => setEditDescription(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm mb-1 font-medium text-gray-700">Status</label>
+                          <select
+                            className="w-full border px-2 py-1 rounded"
+                            value={editStatus}
+                            onChange={e => setEditStatus(e.target.value as Project["status"])}
+                          >
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="planned">Planned</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm mb-1 font-medium text-gray-700">Due Date</label>
+                          <input
+                            type="date"
+                            className="w-full border px-2 py-1 rounded"
+                            value={editDueDate}
+                            onChange={e => setEditDueDate(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm mb-1 font-medium text-gray-700">Tags (comma separated)</label>
+                          <input
+                            type="text"
+                            className="w-full border px-2 py-1 rounded"
+                            value={editTags}
+                            onChange={e => setEditTags(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm mb-1 font-medium text-gray-700">Tech Stack (comma separated)</label>
+                          <input
+                            type="text"
+                            className="w-full border px-2 py-1 rounded"
+                            value={editTechStack}
+                            onChange={e => setEditTechStack(e.target.value)}
+                          />
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            type="submit"
+                            className="bg-blue-600 text-white hover:bg-blue-700"
+                          >Save</Button>
+                          <DialogClose asChild>
+                            <Button type="button" variant="outline">Cancel</Button>
+                          </DialogClose>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+
+                  <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="ml-2"
+                        onClick={() => setDeleteDialogOpen(true)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Project</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. Are you sure you want to delete this project?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel asChild>
+                          <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                        </AlertDialogCancel>
+                        <AlertDialogAction asChild>
+                          <Button
+                            variant="destructive"
+                            onClick={handleDelete}
+                          >
+                            Delete
+                          </Button>
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -191,7 +394,7 @@ export const ProjectDetailView = ({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">Custom Sections</CardTitle>
-                <Button 
+                <Button
                   onClick={() => setShowAddSection(true)}
                   size="sm"
                   className="bg-blue-600 hover:bg-blue-700"
@@ -214,8 +417,8 @@ export const ProjectDetailView = ({
               {project.customSections.length === 0 && !showAddSection && (
                 <div className="text-center py-8 text-slate-500">
                   <p>No custom sections yet</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => setShowAddSection(true)}
                     className="mt-2"
                   >
@@ -255,7 +458,9 @@ export const ProjectDetailView = ({
                           initialTitle={section.title}
                           initialContent={section.content}
                           initialType={section.type}
-                          onSave={(title, content, type) => handleEditCustomSection(section.id, title, content, type)}
+                          onSave={(title, content, type) =>
+                            handleEditCustomSection(section.id, title, content, type)
+                          }
                           onCancel={() => setEditingSectionId(null)}
                         />
                       </div>

@@ -1,9 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Calendar, Code, Tag } from "lucide-react";
-import { Project } from "@/pages/Index";
+import type { Project } from "@/types";
 
 interface ProjectDashboardProps {
   projects: Project[];
