@@ -167,7 +167,7 @@ You're free to use, modify, and distribute as you like.
 
 ## 📬 Contact
 
-📧 Email: [mani9441@example.com](mailto:mani9441@example.com)
+📧 Email: [k.manikanta9441@gmail.com](mailto:k.manikanta9441@gmail.com)
 💻 GitHub: [@mani9441](https://github.com/mani9441)
 
 ---
